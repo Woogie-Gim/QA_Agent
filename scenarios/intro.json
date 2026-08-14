@@ -1,0 +1,8 @@
+{
+  "name": "게임초기시나리오",
+  "steps": [
+    { "name": "앱 실행 화면", "actionHint": "게임 시작", "actionType": "tap", "expect": "타이틀 화면에 게임 시작 버튼 노출" },
+    { "name": "약관 동의", "actionHint": "동의", "actionType": "tap", "expect": "약관 동의 팝업 노출" },
+    { "name": "닉네임 입력", "actionHint": "닉네임", "actionType": "input", "text": "테스터", "expect": "닉네임 입력창 노출" }
+  ]
+}

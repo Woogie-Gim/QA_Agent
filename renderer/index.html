@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>QA Agent</title>
+  </head>
+  <body>
+    <h1>QA Agent</h1>
+    <button id="check">기기 확인</button>
+    <ul id="devices"></ul>
+
+    <script>
+      // 버튼 누르면 메인에 기기 목록 요청하고 화면에 표시
+      document.getElementById("check").addEventListener("click", async () => {
+        const devices = await window.api.getDevices();
+        const ul = document.getElementById("devices");
+        ul.innerHTML = "";
+        if (devices.length === 0) {
+          ul.innerHTML = "<li>연결된 기기 없음</li>";
+          return;
+        }
+        for (const d of devices) {
+          const li = document.createElement("li");
+          li.textContent = d;
+          ul.appendChild(li);
+        }
+      });
+    </script>
+  </body>
+</html>
