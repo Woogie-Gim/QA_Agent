@@ -8,22 +8,39 @@
     <h1>QA Agent</h1>
     <button id="check">기기 확인</button>
     <ul id="devices"></ul>
+    <button id="shot">스크린샷</button>
+    <button id="load">시나리오 불러오기</button>
+
+    <ul id="devices"></ul>
+    <img id="preview" style="max-width: 300px; display: none;" />
+    <pre id="scenario"></pre>
 
     <script>
-      // 버튼 누르면 메인에 기기 목록 요청하고 화면에 표시
+      // 기기 확인 (어제 코드 그대로)
       document.getElementById("check").addEventListener("click", async () => {
         const devices = await window.api.getDevices();
         const ul = document.getElementById("devices");
-        ul.innerHTML = "";
-        if (devices.length === 0) {
-          ul.innerHTML = "<li>연결된 기기 없음</li>";
-          return;
-        }
+        ul.innerHTML = devices.length ? "" : "<li>연결된 기기 없음</li>";
         for (const d of devices) {
           const li = document.createElement("li");
           li.textContent = d;
           ul.appendChild(li);
         }
+      });
+
+      // 스크린샷 찍고 미리보기 표시
+      document.getElementById("shot").addEventListener("click", async () => {
+        const savedPath = await window.api.screenshot();
+        const img = document.getElementById("preview");
+        img.src = "file://" + savedPath + "?t=" + Date.now(); // 캐시 방지
+        img.style.display = "block";
+      });
+
+      // 시나리오 불러와서 JSON 표시
+      document.getElementById("load").addEventListener("click", async () => {
+        const scenario = await window.api.loadScenario();
+        if (!scenario) return;
+        document.getElementById("scenario").textContent = JSON.stringify(scenario, null, 2);
       });
     </script>
   </body>
