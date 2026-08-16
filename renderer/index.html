@@ -7,15 +7,18 @@
   <body>
     <h1>QA Agent</h1>
     <button id="check">기기 확인</button>
-    <ul id="devices"></ul>
     <button id="shot">스크린샷</button>
     <button id="load">시나리오 불러오기</button>
+    <button id="run">시나리오 실행</button>
 
     <ul id="devices"></ul>
     <img id="preview" style="max-width: 300px; display: none;" />
     <pre id="scenario"></pre>
+    <div id="log" style="background:#111; color:#eee; padding:10px; font-family:monospace; margin-top:10px;"></div>
 
     <script>
+      let loadedScenario = null;
+
       // 기기 확인 (어제 코드 그대로)
       document.getElementById("check").addEventListener("click", async () => {
         const devices = await window.api.getDevices();
@@ -30,18 +33,43 @@
 
       // 스크린샷 찍고 미리보기 표시
       document.getElementById("shot").addEventListener("click", async () => {
-        const savedPath = await window.api.screenshot();
+        const res = await window.api.screenshot();
+        if (!res.ok) {
+          alert(res.message); // 기기 없으면 안내
+          return;
+        }
         const img = document.getElementById("preview");
-        img.src = "file://" + savedPath + "?t=" + Date.now(); // 캐시 방지
+        img.src = "file://" + res.path + "?t=" + Date.now();
         img.style.display = "block";
       });
 
-      // 시나리오 불러와서 JSON 표시
-      document.getElementById("load").addEventListener("click", async () => {
-        const scenario = await window.api.loadScenario();
-        if (!scenario) return;
-        document.getElementById("scenario").textContent = JSON.stringify(scenario, null, 2);
-      });
+    // 불러오기 버튼에서 시나리오를 변수에 저장해두기 (기존 load 핸들러 수정)
+    document.getElementById("load").addEventListener("click", async () => {
+      const scenario = await window.api.loadScenario();
+      if (!scenario) return;
+      loadedScenario = scenario;
+      document.getElementById("scenario").textContent = JSON.stringify(scenario, null, 2);
+    });
+
+    // 실시간 진행 로그 수신
+    window.api.onStepProgress((r) => {
+      const log = document.getElementById("log");
+      const color = r.verdict === "PASS" ? "#4ade80" : "#f87171";
+      log.innerHTML += `<div style="color:${color}">[${r.verdict}] 스텝${r.step} ${r.name} — ${r.reason}</div>`;
+    });
+
+    // 실행 버튼
+    document.getElementById("run").addEventListener("click", async () => {
+      if (!loadedScenario) {
+        alert("먼저 시나리오를 불러오세요.");
+        return;
+      }
+      document.getElementById("log").innerHTML = ""; // 초기화
+      const results = await window.api.runScenario(loadedScenario);
+      const passed = results.filter((r) => r.verdict === "PASS").length;
+      document.getElementById("log").innerHTML +=
+        `<div style="color:#fbbf24">완료: 전체 ${results.length} / PASS ${passed} / FAIL ${results.length - passed}</div>`;
+    });
     </script>
   </body>
 </html>

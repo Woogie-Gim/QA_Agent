@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from "electron";
-import { getDevices, screenshot } from "./adb";
+import { getDevices, screenshot, hasDevice } from "./adb";
 import { loadScenario } from "./scenario";
+import { runScenario } from "./agent";
 import * as path from "path";
 
 function createWindow() {
@@ -21,10 +22,14 @@ ipcMain.handle("get-devices", async () => {
 
 // 스크린샷 찍어서 reports 폴더에 저장
 ipcMain.handle("take-screenshot", async () => {
+  // 기기 없으면 에러 대신 상태 객체 반환. UI가 판단하게
+  if (!(await hasDevice())) {
+    return { ok: false, message: "연결된 기기가 없습니다." };
+  }
   const savePath = path.join(__dirname, "../reports", `shot_${Date.now()}.png`);
-  return await screenshot(savePath);
+  const saved = await screenshot(savePath);
+  return { ok: true, path: saved };
 });
-
 // 파일 선택창 열어서 시나리오 JSON 불러오기
 ipcMain.handle("load-scenario", async () => {
   const result = await dialog.showOpenDialog({
@@ -40,4 +45,13 @@ app.whenReady().then(createWindow);
 // 모든 창 닫히면 앱 종료 (mac 제외 관례)
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
+});
+
+ipcMain.handle("run-scenario", async (event, scenario) => {
+  const reportsDir = path.join(__dirname, "../reports");
+  // onProgress를 렌더러로 전송. 스텝마다 이벤트 쏨
+  const results = await runScenario(scenario, reportsDir, (r) => {
+    event.sender.send("step-progress", r);
+  });
+  return results;
 });

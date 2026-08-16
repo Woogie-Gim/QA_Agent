@@ -29,3 +29,9 @@ export async function screenshot(savePath: string): Promise<string> {
   await writeFile(savePath, stdout);
   return savePath;
 }
+
+// 기기가 하나라도 연결돼 있는지 확인. 액션 전 가드용
+export async function hasDevice(): Promise<boolean> {
+  const devices = await getDevices();
+  return devices.length > 0;
+}
