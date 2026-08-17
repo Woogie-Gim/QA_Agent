@@ -1,0 +1,28 @@
+{
+  "name": "게임초기시나리오",
+  "steps": [
+    { "name": "게스트 로그인", "actionHint": "게스트 로그인", "actionType": "tap", "expect": "게스트 로그인 경고 팝업 노출", "postDelay": 3.0 },
+    { "name": "게스트 로그인 경고 확인", "actionHint": "확인", "actionType": "tap", "expect": "알림 허용 팝업 노출", "postDelay": 2.0, "verify": true },
+    { "name": "알림 허용", "actionHint": "허용", "actionType": "tap", "expect": "인트로 영상 재생", "postDelay": 5.0 },
+    { "name": "인트로 스킵", "actionHint": "스킵", "actionType": "tap", "expect": "스킵 확인 팝업 노출", "postDelay": 2.0 },
+    { "name": "인트로 스킵 확인", "actionHint": "확인", "actionType": "tap", "expect": "튜토리얼 시작 화면 진입", "postDelay": 4.0, "verify": true },
+    { "name": "튜토리얼 시작", "actionHint": "튜토리얼 시작", "actionType": "tap", "expect": "소환석 튜토리얼 진입", "postDelay": 2.0 },
+    { "name": "소환석 튜토리얼 시작", "actionHint": "소환석 튜토리얼 시작", "actionType": "tap", "expect": "상점 진입 가능 상태", "postDelay": 2.0 },
+    { "name": "상점 진입", "actionHint": "상점", "actionType": "tap", "expect": "상점 화면 노출", "postDelay": 2.0 },
+    { "name": "소환석 상점 진입", "actionHint": "소환석 상점", "actionType": "tap", "expect": "소환석 상점 목록 노출", "postDelay": 2.0 },
+    { "name": "포리 선택", "actionHint": "포리", "actionType": "tap", "expect": "포리 상세/구매 화면 노출", "postDelay": 2.0 },
+    { "name": "포리 구매", "actionHint": "포리 구매", "actionType": "tap", "expect": "포리 소환 진행", "postDelay": 5.0 },
+    { "name": "포리 소환 완료", "actionHint": "포리 소환 완료", "actionType": "tap", "expect": "포리 소환 완료 후 상점 복귀", "postDelay": 2.0, "verify": true },
+    { "name": "상점 재진입", "actionHint": "상점", "actionType": "tap", "expect": "상점 화면 노출", "postDelay": 2.0 },
+    { "name": "서식지 상점 진입", "actionHint": "서식지 상점", "actionType": "tap", "expect": "서식지 상점 목록 노출", "postDelay": 2.0 },
+    { "name": "숲 서식지 선택", "actionHint": "숲 서식지", "actionType": "tap", "expect": "숲 서식지 상세/구매 화면 노출", "postDelay": 2.0 },
+    { "name": "숲 서식지 구매", "actionHint": "숲 서식지 구매", "actionType": "tap", "expect": "서식지 배치 모드 진입", "postDelay": 2.0 },
+    { "name": "숲 서식지 배치", "actionHint": "숲 서식지 배치", "actionType": "tap", "expect": "배치 확인 대기", "postDelay": 5.0 },
+    { "name": "숲 서식지 배치 완료", "actionHint": "배치 완료", "actionType": "tap", "expect": "숲 서식지 배치 완료", "postDelay": 2.0, "verify": true },
+    { "name": "소환 제단 진입", "actionHint": "소환 제단", "actionType": "tap", "expect": "소환 제단 화면 노출", "postDelay": 2.0 },
+    { "name": "제단 포리 소환 완료", "actionHint": "포리 소환 완료", "actionType": "tap", "expect": "포리 배치 모드 진입", "postDelay": 2.0 },
+    { "name": "포리 배치", "actionHint": "포리 배치", "actionType": "tap", "expect": "포리 배치 위치 선택", "postDelay": 2.0 },
+    { "name": "포리 숲 서식지 배치", "actionHint": "숲 서식지 배치", "actionType": "tap", "expect": "포리 배치 확인 대기", "postDelay": 5.0 },
+    { "name": "포리 배치 완료", "actionHint": "배치 완료", "actionType": "tap", "expect": "게임 초기 시나리오 완료", "postDelay": 2.0, "verify": true }
+  ]
+}

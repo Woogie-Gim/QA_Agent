@@ -7,6 +7,8 @@ export interface Step {
   actionType: "tap" | "input" | "none";
   text?: string;
   expect: string;
+  postDelay?: number;
+  verify?: boolean;
 }
 
 // 시나리오 전체 타입
