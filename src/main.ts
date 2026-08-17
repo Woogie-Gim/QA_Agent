@@ -2,6 +2,8 @@ import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import { getDevices, screenshot, hasDevice } from "./adb";
 import { loadScenario } from "./scenario";
 import { runScenario } from "./agent";
+import { writeReport } from "./report";
+import { mkdir } from "fs/promises";
 import * as path from "path";
 
 function createWindow() {
@@ -40,18 +42,24 @@ ipcMain.handle("load-scenario", async () => {
   return await loadScenario(result.filePaths[0]);
 });
 
-app.whenReady().then(createWindow);
-
-// 모든 창 닫히면 앱 종료 (mac 제외 관례)
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
-});
-
 ipcMain.handle("run-scenario", async (event, scenario) => {
   const reportsDir = path.join(__dirname, "../reports");
   // onProgress를 렌더러로 전송. 스텝마다 이벤트 쏨
   const results = await runScenario(scenario, reportsDir, (r) => {
     event.sender.send("step-progress", r);
   });
-  return results;
+
+  // 실행 끝나면 엑셀 리포트 저장
+  await mkdir(reportsDir, { recursive: true }); // 폴더 없으면 생성
+  const reportPath = path.join(reportsDir, `${scenario.name}_${Date.now()}.xlsx`);
+  const summary = await writeReport(results, scenario.name, reportPath);
+
+  return { results, report: summary };
+});
+
+app.whenReady().then(createWindow);
+
+// 모든 창 닫히면 앱 종료 (mac 제외 관례)
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
 });

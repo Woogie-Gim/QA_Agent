@@ -3,18 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <title>QA Agent</title>
+    <style>
+      body { font-family: "Segoe UI", sans-serif; background: #1a1a1a; color: #e0e0e0; padding: 20px; margin: 0; }
+      h1 { color: #60a5fa; margin-bottom: 16px; }
+      .toolbar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+      button { background: #2563eb; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+      button:hover { background: #1d4ed8; }
+      #devices { list-style: none; padding: 0; color: #9ca3af; }
+      #log { background: #0d0d0d; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; height: 300px; overflow-y: auto; margin-top: 12px; }
+      #scenario { background: #0d0d0d; padding: 12px; border-radius: 6px; font-size: 12px; max-height: 200px; overflow-y: auto; color: #9ca3af; }
+      img#preview { max-width: 280px; border-radius: 6px; margin-top: 12px; display: none; }
+    </style>
   </head>
   <body>
     <h1>QA Agent</h1>
-    <button id="check">기기 확인</button>
-    <button id="shot">스크린샷</button>
-    <button id="load">시나리오 불러오기</button>
-    <button id="run">시나리오 실행</button>
+    <div class="toolbar">
+      <button id="check">기기 확인</button>
+      <button id="shot">스크린샷</button>
+      <button id="load">시나리오 불러오기</button>
+      <button id="run">시나리오 실행</button>
+    </div>
 
     <ul id="devices"></ul>
-    <img id="preview" style="max-width: 300px; display: none;" />
+    <img id="preview" />
+    <div id="log"></div>
     <pre id="scenario"></pre>
-    <div id="log" style="background:#111; color:#eee; padding:10px; font-family:monospace; margin-top:10px;"></div>
 
     <script>
       let loadedScenario = null;
@@ -26,7 +39,7 @@
         ul.innerHTML = devices.length ? "" : "<li>연결된 기기 없음</li>";
         for (const d of devices) {
           const li = document.createElement("li");
-          li.textContent = d;
+          li.textContent = "기기: " + d;
           ul.appendChild(li);
         }
       });
@@ -34,42 +47,38 @@
       // 스크린샷 찍고 미리보기 표시
       document.getElementById("shot").addEventListener("click", async () => {
         const res = await window.api.screenshot();
-        if (!res.ok) {
-          alert(res.message); // 기기 없으면 안내
-          return;
-        }
+        if (!res.ok) { alert(res.message); return; }
         const img = document.getElementById("preview");
         img.src = "file://" + res.path + "?t=" + Date.now();
         img.style.display = "block";
       });
 
-    // 불러오기 버튼에서 시나리오를 변수에 저장해두기 (기존 load 핸들러 수정)
-    document.getElementById("load").addEventListener("click", async () => {
-      const scenario = await window.api.loadScenario();
-      if (!scenario) return;
-      loadedScenario = scenario;
-      document.getElementById("scenario").textContent = JSON.stringify(scenario, null, 2);
-    });
+      // 불러오기 버튼에서 시나리오를 변수에 저장해두기 (기존 load 핸들러 수정)
+      document.getElementById("load").addEventListener("click", async () => {
+        const scenario = await window.api.loadScenario();
+        if (!scenario) return;
+        loadedScenario = scenario;
+        document.getElementById("scenario").textContent = JSON.stringify(scenario, null, 2);
+      });
 
-    // 실시간 진행 로그 수신
-    window.api.onStepProgress((r) => {
-      const log = document.getElementById("log");
-      const color = r.verdict === "PASS" ? "#4ade80" : "#f87171";
-      log.innerHTML += `<div style="color:${color}">[${r.verdict}] 스텝${r.step} ${r.name} — ${r.reason}</div>`;
-    });
+      // 실시간 진행 로그 수신
+      window.api.onStepProgress((r) => {
+        const log = document.getElementById("log");
+        const color = r.verdict === "PASS" ? "#4ade80" : "#f87171";
+        log.innerHTML += `<div style="color:${color}">[${r.verdict}] 스텝${r.step} ${r.name} — ${r.reason}</div>`;
+        log.scrollTop = log.scrollHeight;
+      });
 
-    // 실행 버튼
-    document.getElementById("run").addEventListener("click", async () => {
-      if (!loadedScenario) {
-        alert("먼저 시나리오를 불러오세요.");
-        return;
-      }
-      document.getElementById("log").innerHTML = ""; // 초기화
-      const results = await window.api.runScenario(loadedScenario);
-      const passed = results.filter((r) => r.verdict === "PASS").length;
-      document.getElementById("log").innerHTML +=
-        `<div style="color:#fbbf24">완료: 전체 ${results.length} / PASS ${passed} / FAIL ${results.length - passed}</div>`;
-    });
+      // 실행 버튼
+      document.getElementById("run").addEventListener("click", async () => {
+        if (!loadedScenario) { alert("먼저 시나리오를 불러오세요."); return; }
+        document.getElementById("log").innerHTML = "";
+        const { report } = await window.api.runScenario(loadedScenario);
+        const log = document.getElementById("log");
+        log.innerHTML += `<div style="color:#fbbf24">완료: 전체 ${report.total} / PASS ${report.pass} / FAIL ${report.fail}</div>`;
+        log.innerHTML += `<div style="color:#60a5fa">리포트: ${report.path}</div>`;
+      });
+      
     </script>
   </body>
 </html>

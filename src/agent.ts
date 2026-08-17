@@ -1,6 +1,6 @@
 import { Scenario } from "./scenario";
 import { judge } from "./vlm";
-import { screenshot, hasDevice } from "./adb";
+import { screenshot, hasDevice, dumpTree, parseElements, tap, inputText, wait } from "./adb";
 import * as path from "path";
 
 // 스텝 하나의 실행 결과
@@ -24,22 +24,48 @@ export async function runScenario(
     let result: StepResult;
 
     try {
-      // 기기 끊기면 이 스텝만 FAIL 처리하고 계속
       if (!(await hasDevice())) {
         result = { step: i + 1, name: step.name, verdict: "FAIL", reason: "기기 연결 끊김" };
+        results.push(result);
+        onProgress(result);
+        continue;
+      }
+
+      // 현재 화면 트리에서 대상 요소 탐색
+      const elements = parseElements(await dumpTree());
+      const target = elements.find((e) => e.label.includes(step.actionHint));
+
+      if (!target) {
+        // 요소 못 찾으면 FAIL, 다음 스텝 진행
+        result = { step: i + 1, name: step.name, verdict: "FAIL", reason: `요소 '${step.actionHint}' 없음` };
       } else {
-        const shot = path.join(reportsDir, `${scenario.name}_${i + 1}.png`);
-        await screenshot(shot);
-        const v = await judge(shot, step); // 판단 (목)
-        result = { step: i + 1, name: step.name, verdict: v.verdict, reason: v.reason };
+        // 액션 실행
+        if (step.actionType === "tap") {
+          await tap(...target.center);
+        } else if (step.actionType === "input") {
+          await tap(...target.center);
+          await inputText(step.text ?? "");
+        }
+
+        // 게임 로딩 대기
+        await wait(step.postDelay ?? 1.0);
+
+        // verify 스텝만 VLM 판단, 나머지는 실행 성공으로 PASS
+        if (step.verify) {
+          const shot = path.join(reportsDir, `${scenario.name}_${i + 1}.png`);
+          await screenshot(shot);
+          const v = await judge(shot, step);
+          result = { step: i + 1, name: step.name, verdict: v.verdict, reason: v.reason };
+        } else {
+          result = { step: i + 1, name: step.name, verdict: "PASS", reason: `'${step.actionHint}' 탭 완료` };
+        }
       }
     } catch (e) {
-      // 예외도 FAIL로 기록하고 루프 안 죽임
       result = { step: i + 1, name: step.name, verdict: "FAIL", reason: `예외: ${e}` };
     }
 
     results.push(result);
-    onProgress(result); // UI에 실시간 반영
+    onProgress(result);
   }
 
   return results;
