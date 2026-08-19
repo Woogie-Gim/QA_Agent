@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, dialog } from "electron";
-import { getDevices, screenshot, hasDevice } from "./adb";
+import { getDevices, screenshot, hasDevice, dumpTree, parseElements } from "./adb";
 import { loadScenario } from "./scenario";
 import { runScenario } from "./agent";
 import { writeReport } from "./report";
@@ -35,6 +35,7 @@ ipcMain.handle("take-screenshot", async () => {
 // 파일 선택창 열어서 시나리오 JSON 불러오기
 ipcMain.handle("load-scenario", async () => {
   const result = await dialog.showOpenDialog({
+    defaultPath: path.join(__dirname, "../scenarios"), // scenarios 폴더에서 시작
     properties: ["openFile"],
     filters: [{ name: "JSON", extensions: ["json"] }],
   });
@@ -55,6 +56,15 @@ ipcMain.handle("run-scenario", async (event, scenario) => {
   const summary = await writeReport(results, scenario.name, reportPath);
 
   return { results, report: summary };
+});
+
+// 현재 화면의 요소 목록 반환. actionHint 맞추기와 트리 검증용
+ipcMain.handle("inspect-tree", async () => {
+  if (!(await hasDevice())) {
+    return { ok: false, message: "연결된 기기가 없습니다." };
+  }
+  const elements = parseElements(await dumpTree());
+  return { ok: true, elements };
 });
 
 app.whenReady().then(createWindow);

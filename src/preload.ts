@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld("api", {
   // 진행 상황 실시간 수신
   onStepProgress: (cb: (r: StepResult) => void) =>
     ipcRenderer.on("step-progress", (_e, r) => cb(r)),
+  inspectTree: () => ipcRenderer.invoke("inspect-tree"),
 });
