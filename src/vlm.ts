@@ -1,14 +1,17 @@
 import { Step } from "./scenario";
 
-// 판단 결과 타입
+// VLM 판단 결과. 좌표와 검증을 함께 반환
 export interface Verdict {
+  found: boolean;          // 대상 요소를 화면에서 찾았는지
+  x: number;               // 탭할 좌표 (0~해상도)
+  y: number;
   verdict: "PASS" | "FAIL";
   reason: string;
 }
 
-const USE_MOCK = true; // API 결제 후 false로
+const USE_MOCK = true;
 
-// 스크린샷 + 스텝을 받아 Pass/Fail 판단. 지금은 목
+// 스크린샷과 스텝을 받아 대상 좌표와 판정 반환
 export async function judge(shotPath: string, step: Step): Promise<Verdict> {
   if (USE_MOCK) {
     return mockJudge(step);
@@ -16,15 +19,15 @@ export async function judge(shotPath: string, step: Step): Promise<Verdict> {
   return realJudge(shotPath, step);
 }
 
-// 목: 스텝 순서로 대충 판단 흉내. input 스텝 하나만 일부러 FAIL 내서 "끝까지 진행" 검증
+// 목: 화면 중앙 좌표를 반환하는 흉내. input 스텝만 FAIL로 완주 검증
 function mockJudge(step: Step): Verdict {
   if (step.actionType === "input") {
-    return { verdict: "FAIL", reason: `목: '${step.actionHint}' 입력 요소 못 찾음(가정)` };
+    return { found: false, x: 0, y: 0, verdict: "FAIL", reason: `목: '${step.actionHint}' 대상 못 찾음(가정)` };
   }
-  return { verdict: "PASS", reason: `목: '${step.actionHint}' 정상 확인(가정)` };
+  return { found: true, x: 540, y: 1200, verdict: "PASS", reason: `목: '${step.actionHint}' 대상 확인(가정)` };
 }
 
-// 8/25 이후 구현. Claude API 호출 자리
+// 8/25 이후 구현. Claude에 스크린샷 보내고 좌표+판정 JSON 받기
 async function realJudge(shotPath: string, step: Step): Promise<Verdict> {
   throw new Error("API 미연동");
 }
