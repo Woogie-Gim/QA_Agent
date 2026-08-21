@@ -8,6 +8,9 @@ export interface StepResult {
   name: string;
   verdict: "PASS" | "FAIL";
   reason: string;
+  x?: number;          // VLM이 탭한 좌표
+  y?: number;
+  screenshot?: string; // 해당 스텝 스크린샷 경로
 }
 
 export async function runScenario(
@@ -47,7 +50,11 @@ export async function runScenario(
         }
 
         await wait(step.postDelay ?? 1.0);
-        result = { step: i + 1, name: step.name, verdict: v.verdict, reason: v.reason };
+        result = {
+          step: i + 1, name: step.name,
+          verdict: v.verdict, reason: v.reason,
+          x: v.x, y: v.y, screenshot: shot,
+        };
       }
     } catch (e) {
       result = { step: i + 1, name: step.name, verdict: "FAIL", reason: `예외: ${e}` };

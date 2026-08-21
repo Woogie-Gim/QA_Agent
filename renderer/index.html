@@ -26,7 +26,10 @@
     </div>
 
     <ul id="devices"></ul>
-    <img id="preview" />
+    <div id="preview-wrap" style="position: relative; display: inline-block; margin-top: 12px;">
+      <img id="preview" style="max-width: 280px; border-radius: 6px; display: none;" />
+      <div id="tap-dot" style="position: absolute; width: 12px; height: 12px; background: red; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none;"></div>
+    </div>
     <div id="log"></div>
     <pre id="scenario"></pre>
 
@@ -68,16 +71,50 @@
         const color = r.verdict === "PASS" ? "#4ade80" : "#f87171";
         log.innerHTML += `<div style="color:${color}">[${r.verdict}] 스텝${r.step} ${r.name} — ${r.reason}</div>`;
         log.scrollTop = log.scrollHeight;
+
+        // 좌표 있으면 스크린샷에 탭 위치 표시
+        if (r.screenshot && r.x != null) {
+          showTapPoint(r.screenshot, r.x, r.y);
+        }
       });
+
+      // 스크린샷 위에 탭 좌표를 빨간 점으로 표시
+      function showTapPoint(shotPath, x, y) {
+        const wrap = document.getElementById("preview-wrap");
+        const img = document.getElementById("preview");
+        img.onload = () => {
+          // 실제 이미지 해상도 대비 표시 크기 비율로 점 위치 환산
+          const scaleX = img.clientWidth / img.naturalWidth;
+          const scaleY = img.clientHeight / img.naturalHeight;
+          const dot = document.getElementById("tap-dot");
+          dot.style.left = (x * scaleX) + "px";
+          dot.style.top = (y * scaleY) + "px";
+          dot.style.display = "block";
+        };
+        img.src = "file://" + shotPath + "?t=" + Date.now();
+        img.style.display = "block";
+      }
 
       // 실행 버튼
       document.getElementById("run").addEventListener("click", async () => {
         if (!loadedScenario) { alert("먼저 시나리오를 불러오세요."); return; }
+
+        // 실행 중 버튼 비활성화. 중복 실행 방지
+        const runBtn = document.getElementById("run");
+        runBtn.disabled = true;
+        runBtn.textContent = "실행 중...";
+
         document.getElementById("log").innerHTML = "";
-        const { report } = await window.api.runScenario(loadedScenario);
-        const log = document.getElementById("log");
-        log.innerHTML += `<div style="color:#fbbf24">완료: 전체 ${report.total} / PASS ${report.pass} / FAIL ${report.fail}</div>`;
-        log.innerHTML += `<div style="color:#60a5fa">리포트: ${report.path}</div>`;
+        try {
+          const { report } = await window.api.runScenario(loadedScenario);
+          const log = document.getElementById("log");
+          log.innerHTML += `<div style="color:#fbbf24">완료: 전체 ${report.total} / PASS ${report.pass} / FAIL ${report.fail}</div>`;
+          log.innerHTML += `<div style="color:#60a5fa">리포트: ${report.path}</div>`;
+        } finally {
+          // 성공/실패 관계없이 버튼 복구
+          runBtn.disabled = false;
+          runBtn.textContent = "시나리오 실행";
+        }
       });
       
       // 트리 확인 버튼
